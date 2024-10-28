@@ -1,4 +1,5 @@
 # Aprendizaje por Refuerzo: El Problema del Bandido
+
 ## Introducción
 El problema del bandido es un escenario clásico en aprendizaje por refuerzo. Un agente tiene varias opciones (bandits o brazos de una máquina tragamonedas) y debe elegir cuál explorar para maximizar sus ganancias. En este caso, el anunciante está eligiendo entre dos opciones de publicidad, A y B.
 
@@ -456,3 +457,108 @@ plot_evolucion(historique)
 - Visualización (`plot_evolucion`): Permite observar cómo evoluciona la estrategia de `X` a medida que aprende de las jugadas de `Y`.
 
 # X aprende contra Y que también aprende (X apprend / Y apprend)
+
+## Introducción
+En esta sección, tanto \( X \) como \( Y \) están aprendiendo simultáneamente. Ambos jugadores intentan mejorar su estrategia adaptándose a las jugadas del oponente, lo que hace que el juego sea más dinámico y complejo.
+
+### Algoritmo de Aprendizaje
+Ambos jugadores usan una estrategia de **epsilon-greedy**:
+1. **Exploración**: Ambos exploran jugadas al azar con una pequeña probabilidad \( \epsilon \).
+2. **Explotación**: Cada jugador elige la jugada que maximiza su recompensa basándose en el historial del juego.
+
+### Codigo
+
+```python
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+
+
+def JoueurApprentissage(Historique, epsilon, i):
+    # Si es la primera jugada, elige aleatoriamente entre Pi, Fe, Ci
+    if len(Historique) < 2:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Con probabilidad epsilon exploramos
+    if random.random() < epsilon:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Explotación: basándonos en el historial, elegimos la mejor opción
+    # Historial de las últimas jugadas (X_t-2, X_t-1) y (Y_t-2, Y_t-1)
+    pase_reciente = Historique[-2:]  # Tomamos las dos últimas jugadas
+
+    # Contabilizamos las jugadas del adversario cuando se ha jugado la misma secuencia
+    freq_pi, freq_fe, freq_ci = 0, 0, 0
+    for jugada in Historique[:-1]:
+        if jugada[0] == pase_reciente[0][0] and jugada[1] == pase_reciente[0][1]:
+            if jugada[1] == 'Pi':
+                freq_pi += 1
+            elif jugada[1] == 'Fe':
+                freq_fe += 1
+            else:
+                freq_ci += 1
+
+    # Tomamos la jugada con mayor frecuencia
+    if freq_pi > freq_fe and freq_pi > freq_ci:
+        return 'Fe'  # Contra Pi, lo mejor es jugar Fe
+    elif freq_fe > freq_ci:
+        return 'Ci'  # Contra Fe, lo mejor es jugar Ci
+    else:
+        return 'Pi'  # Contra Ci, lo mejor es jugar Pi
+
+
+def plot_evolucion(Historique):
+    n = len(Historique)
+    pi_count = [0]
+    fe_count = [0]
+    ci_count = [0]
+
+    for i in range(1, n):
+        pi_count.append(pi_count[-1] + (1 if Historique[i][0] == 'Pi' else 0))
+        fe_count.append(fe_count[-1] + (1 if Historique[i][0] == 'Fe' else 0))
+        ci_count.append(ci_count[-1] + (1 if Historique[i][0] == 'Ci' else 0))
+
+    plt.plot(np.arange(1, n+1), np.array(pi_count) / np.arange(1, n+1), label='Pi')
+    plt.plot(np.arange(1, n+1), np.array(fe_count) / np.arange(1, n+1), label='Fe')
+    plt.plot(np.arange(1, n+1), np.array(ci_count) / np.arange(1, n+1), label='Ci')
+    plt.xlabel('Rondas')
+    plt.ylabel('Proporción de jugadas')
+    plt.legend()
+    plt.title('Evolución de las jugadas de X')
+    plt.show()
+
+# Función para simular el juego entre X y Y, ambos aprendiendo
+def SimularPartida_X_Y_apprend(n, epsilon_X, epsilon_Y):
+    Historique = []
+    for t in range(n):
+        jugador_X = JoueurApprentissage(Historique, epsilon_X, 0)  # X aprende
+        jugador_Y = JoueurApprentissage(Historique, epsilon_Y, 1)  # Y también aprende
+        Historique.append([jugador_X, jugador_Y])
+    return Historique
+
+# Ejecutamos una simulación con 1000 rondas y epsilon = 0.1 para ambos jugadores
+historique = SimularPartida_X_Y_apprend(1000, 0.1, 0.1)
+
+# Imprimir las primeras jugadas
+print(historique[:10])
+
+# Graficar la evolución de las jugadas de X y Y
+plot_evolucion(historique)
+```
+
+### Salida de codigo
+
+06_SimularPartida_X_Y_apprend
+
+
+
+### Explicación del Código
+- **`SimularPartida_X_Y_apprend`**: Esta función simula una partida entre \( X \) y \( Y \), donde ambos jugadores están aprendiendo. Ambos jugadores eligen sus jugadas en función del historial y ajustan su comportamiento con el tiempo.
+- La dinámica entre dos jugadores que aprenden crea un juego más competitivo, donde las estrategias cambian constantemente en función de cómo se adapten el uno al otro.
+
+### Resultados
+Cuando ambos jugadores están aprendiendo, el juego se vuelve más complejo, ya que no solo tienen que adaptarse a un oponente estático, sino que ambos están cambiando sus estrategias constantemente. La evolución de las jugadas a lo largo del tiempo muestra cómo los jugadores se ajustan y contraajustan en respuesta a las decisiones del otro.
+
+
+
+
