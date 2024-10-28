@@ -93,7 +93,7 @@ plt.title('Simulación de estrategia epsilon-greedy')
 plt.show()
 ```
 ### Salida del codigo:
-01_epsilon-greedy.png
+![epsilon-greedy](assets/01_epsilon-greedy.png)
 
 ## Mejora del Algoritmo
 Una variante de esta estrategia sería hacer que $\epsilon$ disminuya con el tiempo, permitiendo explorar al principio y explotar al final. Algunas posibles secuencias para $\epsilon_i$ incluyen:
@@ -112,6 +112,12 @@ El código se modifica para que $\epsilon$ cambie con el índice $i$ según las 
 # Función para simular el bandit problem con secuencias de epsilon decrecientes
 import numpy as np
 import matplotlib.pyplot as plt
+
+# Parámetros del problema
+n = 1000
+P_A = 0.4
+P_B = 0.6
+
 
 def simulate_epsilon_decreasing(n, P_A, P_B, epsilon_func):
     X = np.zeros(n)
@@ -168,7 +174,8 @@ plt.show()
 ```
 
 ### Salida del codigo:
-02_epsilon-decrecientes.png
+![epsilon-decrecientes](assets/02_epsilon-decrecientes.png)
+
 
 ## Pregunta 3: Simulación para Encontrar el Mejor $\epsilon$
 Para $N = 100$, $P_A = 0.4$ y $P_B = 0.6$, podemos realizar 10,000 simulaciones para determinar el valor óptimo de $\epsilon$ que maximiza $E[X_1 + \dots + X_n]$.
@@ -186,7 +193,7 @@ En este escenario, dos jugadores participan en el clásico juego de piedra-papel
 Cada jugador toma decisiones secuenciales y tiene en cuenta el comportamiento pasado del adversario.
 
 ### Notaciones:
-- $( X_t \in \{\text{Pi}, \text{Fe}, \text{Ci}\} )$: La elección del jugador en el instante $ t $.
+- $( X_t \in \{\text{Pi}, \text{Fe}, \text{Ci}\} )$: La elección del jugador en el instante $t$.
 - $( Y_t \in \{\text{Pi}, \text{Fe}, \text{Ci}\} )$: La elección del adversario en el instante $t$.
   
 
@@ -304,6 +311,54 @@ Podemos también trazar la proporción de jugadas que elige el jugador `X` a lo 
 
 ```python
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+
+def JoueurApprentissage(Historique, epsilon, i):
+    # Si es la primera jugada, elige aleatoriamente entre Pi, Fe, Ci
+    if len(Historique) < 2:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Con probabilidad epsilon exploramos
+    if random.random() < epsilon:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Explotación: basándonos en el historial, elegimos la mejor opción
+    # Historial de las últimas jugadas (X_t-2, X_t-1) y (Y_t-2, Y_t-1)
+    pase_reciente = Historique[-2:]  # Tomamos las dos últimas jugadas
+
+    # Contabilizamos las jugadas del adversario cuando se ha jugado la misma secuencia
+    freq_pi, freq_fe, freq_ci = 0, 0, 0
+    for jugada in Historique[:-1]:
+        if jugada[0] == pase_reciente[0][0] and jugada[1] == pase_reciente[0][1]:
+            if jugada[1] == 'Pi':
+                freq_pi += 1
+            elif jugada[1] == 'Fe':
+                freq_fe += 1
+            else:
+                freq_ci += 1
+
+    # Tomamos la jugada con mayor frecuencia
+    if freq_pi > freq_fe and freq_pi > freq_ci:
+        return 'Fe'  # Contra Pi, lo mejor es jugar Fe
+    elif freq_fe > freq_ci:
+        return 'Ci'  # Contra Fe, lo mejor es jugar Ci
+    else:
+        return 'Pi'  # Contra Ci, lo mejor es jugar Pi
+
+# Simulación de partidas
+def SimularPartida(n, epsilon):
+    Historique = []
+    for t in range(n):
+        jugador_X = JoueurApprentissage(Historique, epsilon, 0)
+        jugador_Y = random.choice(['Pi', 'Fe', 'Ci'])  # El adversario juega aleatoriamente
+        Historique.append([jugador_X, jugador_Y])
+    return Historique
+
+N_RONDAS = 1000
+# Ejecutamos una simulación con 1000 rondas y epsilon = 0.1
+historique = SimularPartida(N_RONDAS, 0.1)
+
 
 def plot_evolucion(Historique):
     n = len(Historique)
@@ -331,7 +386,8 @@ plot_evolucion(historique)
 
 ### Salida
 
-04_plot_evolucion
+
+![epsilon-decrecientes](assets/04_plot_evolucion.png)
 
 ## Conclusión
 
@@ -445,6 +501,11 @@ def plot_evolucion(Historique):
 # Graficar la evolución de las jugadas de X
 plot_evolucion(historique)
 ```
+
+### Salidad del codigo
+![epsilon-decrecientes](assets/05_SimularPartida_X_Y_iid.png)
+
+
 ## Explicación del Código
 
 - `SimularPartida_X_apprend_Y_iid`: Simula una serie de jugadas entre `X`, que aprende usando una estrategia `ϵ-greedy`, y `Y`, que juega de forma independiente con probabilidades fijas (`p`, `q`, `r` para `'Pi'`, `'Fe'`, `'Ci'`).
@@ -540,12 +601,12 @@ print(historique[:10])
 
 # Graficar la evolución de las jugadas de X y Y
 plot_evolucion(historique)
+
 ```
 
 ### Salida de codigo
 
-06_SimularPartida_X_Y_apprend
-
+![epsilon-decrecientes](assets/06_SimularPartida_X_Y_apprend.png)
 
 
 ### Explicación del Código
