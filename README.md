@@ -11,13 +11,9 @@ Cada opción tiene una probabilidad desconocida de éxito $P_A$ y $P_B$, y el ob
 2. **Resultados de los clics**: Si el cliente hace clic, el valor de $X_i = 1$, y si no hace clic, $X_i = 0$. Esto se modela como una variable aleatoria Bernoulli con probabilidad $P_{E_i}$, es decir, $$X_i \sim \text{Bernoulli}(P_{E_i}).$$
 
 3. **Objetivo**: El objetivo es definir una estrategia que maximice las ganancias esperadas:
-   $$
-   \lim_{n \to \infty} \frac{X_1 + \dots + X_n}{n} \to \max(P_A, P_B)
-   $$
+   $\lim_{n \to \infty} \frac{X_1 + \dots + X_n}{n} \to \max(P_A, P_B)$
    También queremos maximizar la ganancia en un horizonte finito de tiempo:
-   $$
-   \max E_i \text{ estrategias } E[X_1 + \dots + X_n]
-   $$
+   $$\max E_i \text{ estrategias } E[X_1 + \dots + X_n]$$
    
 ## Estrategia Epsilon-**Greedy**
 
