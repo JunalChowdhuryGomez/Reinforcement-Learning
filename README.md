@@ -198,9 +198,7 @@ $Historial = [[X_1, Y_1], [X_2, Y_2], \dots, [X_T, Y_T]]$
 
 El adversario puede tener una memoria corta y tomar decisiones de manera parcialmente aleatoria. Esto se modela con la función:
 
-$$
-Y_{t+1} = \phi(X_{t-1}, X_t, Y_{t-1}, Y_t, A_{t+1})
-$$
+$Y_{t+1} = \phi(X_{t-1}, X_t, Y_{t-1}, Y_t, A_{t+1})$
 
 donde $A_{t+1}$ es una variable aleatoria que introduce aleatoriedad en las decisiones.
 
@@ -342,7 +340,119 @@ plot_evolucion(historique)
 
 El aprendizaje markoviano en el juego de piedra-papel-tijeras permite a los jugadores mejorar su desempeño a medida que utilizan la información del historial. Usando una estrategia `ϵ-greedy`, el jugador `X` puede explorar nuevas estrategias y, al mismo tiempo, explotar las mejores respuestas conocidas frente a su adversario.
 
+# Aprendizaje de X cuando Y juega i.i.d. (X apprend / Y joue i.i.d.)
+
+## Introducción
+
+En esta sección, se explora cómo el jugador $ X $ puede aprender cuando su oponente $Y $ juega de manera independiente e idénticamente distribuida `i.i.d.`, es decir, $ Y $ no está adaptando su estrategia y juega aleatoriamente con probabilidades fijas para cada una de las opciones `{Pi, Fe, Ci}`.
+
+### Suposiciones
+
+El jugador $ Y $ juega cada opción con probabilidades constantes:
+- $ P(\text{Pi}) = p $
+- $ P(\text{Fe}) = q $
+- $ P(\text{Ci}) = r $
+
+El jugador $X$ trata de aprender la mejor respuesta a esta distribución fija de jugadas.
+
+### Algoritmo de Aprendizaje
+
+El jugador $ X $ utiliza un enfoque de **epsilon-greedy** para equilibrar la exploración y la explotación:
+1. **Exploración**: Con probabilidad $ \epsilon $ $ X $ explora nuevas jugadas al azar.
+2. **Explotación**: Con probabilidad $ 1 - \epsilon $, $ X $ elige la mejor jugada en función de las observaciones pasadas de $ Y $.
+
+### Codigo
+```python
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+
+
+def JoueurApprentissage(Historique, epsilon, i):
+    # Si es la primera jugada, elige aleatoriamente entre Pi, Fe, Ci
+    if len(Historique) < 2:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Con probabilidad epsilon exploramos
+    if random.random() < epsilon:
+        return random.choice(['Pi', 'Fe', 'Ci'])
+
+    # Explotación: basándonos en el historial, elegimos la mejor opción
+    # Historial de las últimas jugadas (X_t-2, X_t-1) y (Y_t-2, Y_t-1)
+    pase_reciente = Historique[-2:]  # Tomamos las dos últimas jugadas
+
+    # Contabilizamos las jugadas del adversario cuando se ha jugado la misma secuencia
+    freq_pi, freq_fe, freq_ci = 0, 0, 0
+    for jugada in Historique[:-1]:
+        if jugada[0] == pase_reciente[0][0] and jugada[1] == pase_reciente[0][1]:
+            if jugada[1] == 'Pi':
+                freq_pi += 1
+            elif jugada[1] == 'Fe':
+                freq_fe += 1
+            else:
+                freq_ci += 1
+
+    # Tomamos la jugada con mayor frecuencia
+    if freq_pi > freq_fe and freq_pi > freq_ci:
+        return 'Fe'  # Contra Pi, lo mejor es jugar Fe
+    elif freq_fe > freq_ci:
+        return 'Ci'  # Contra Fe, lo mejor es jugar Ci
+    else:
+        return 'Pi'  # Contra Ci, lo mejor es jugar Pi
 
 
 
+# Función para simular el juego entre X que aprende y Y que juega i.i.d.
+def SimularPartida_X_apprend_Y_iid(n, epsilon, p, q, r):
+    Historique = []
+    for t in range(n):
+        jugador_Y = random.choices(['Pi', 'Fe', 'Ci'], weights=[p, q, r])[0]
+        jugador_X = JoueurApprentissage(Historique, epsilon, 0)
+        Historique.append([jugador_X, jugador_Y])
+    return Historique
 
+# Probabilidades fijas de Y (i.i.d.)
+p = 0.6  # Pi
+q = 0.2  # Fe
+r = 0.2  # Ci
+
+N_RONDAS = 10000
+# Ejecutamos una simulación con 1000 rondas y epsilon = 0.1
+historique = SimularPartida_X_apprend_Y_iid(N_RONDAS, 0.1, p, q, r)
+
+# Imprimir las primeras jugadas
+print(historique[:10])
+
+def plot_evolucion(Historique):
+    n = len(Historique)
+    pi_count = [0]
+    fe_count = [0]
+    ci_count = [0]
+
+    for i in range(1, n):
+        pi_count.append(pi_count[-1] + (1 if Historique[i][0] == 'Pi' else 0))
+        fe_count.append(fe_count[-1] + (1 if Historique[i][0] == 'Fe' else 0))
+        ci_count.append(ci_count[-1] + (1 if Historique[i][0] == 'Ci' else 0))
+
+    plt.plot(np.arange(1, n+1), np.array(pi_count) / np.arange(1, n+1), label='Pi')
+    plt.plot(np.arange(1, n+1), np.array(fe_count) / np.arange(1, n+1), label='Fe')
+    plt.plot(np.arange(1, n+1), np.array(ci_count) / np.arange(1, n+1), label='Ci')
+    plt.xlabel('Rondas')
+    plt.ylabel('Proporción de jugadas')
+    plt.legend()
+    plt.title('Evolución de las jugadas de X')
+    plt.show()
+
+
+
+# Graficar la evolución de las jugadas de X
+plot_evolucion(historique)
+```
+## Explicación del Código
+
+- `SimularPartida_X_apprend_Y_iid`: Simula una serie de jugadas entre `X`, que aprende usando una estrategia `ϵ-greedy`, y `Y`, que juega de forma independiente con probabilidades fijas (`p`, `q`, `r` para `'Pi'`, `'Fe'`, `'Ci'`).
+- Parámetros de `Y`: `p = 0.6`, `q = 0.2`, `r = 0.2`, para sesgar las jugadas de `Y` y ver cómo `X` adapta su estrategia.
+- `N_RONDAS = 10000`, `epsilon = 0.1`: `X` explora un 10% de las veces y explota el resto.
+- Visualización (`plot_evolucion`): Permite observar cómo evoluciona la estrategia de `X` a medida que aprende de las jugadas de `Y`.
+
+# X aprende contra Y que también aprende (X apprend / Y apprend)
